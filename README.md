@@ -3,7 +3,7 @@ When I started with Unity3d development I needed to use SQLite in my project and
 
 At the end, I decided that there should be a simpler way and I created **SQLite4Unity3d**, a library that helps you to use SQLite in your Unity3d projects in a clear and easy way and works in **iOS, Android and Windows Phone** projects.
 
-Besides that, it uses the great [sqlite-net](https://github.com/praeclarum/sqlite-net) library as a base so you will have **Linq instead of sql**. For a further reference on what possibilities you have with this library I encourage you to visit [its github repository](https://github.com/praeclarum/sqlite-net). 
+Besides that, it uses the great [sqlite-net](https://github.com/praeclarum/sqlite-net) library as a base so you will have **Linq instead of sql**. For a further reference on what possibilities you have available with this library I encourage you to visit [its github repository](https://github.com/praeclarum/sqlite-net). 
 
 *Note: _SQLite4Unity3d uses only the synchronous part of sqlite-net, so all the calls to the database are synchronous._
 
