@@ -1,5 +1,5 @@
 # What's this?
-When I started with Unity3d I needed to use SQLite in my project and it was very hard to me to find a place with simple instructions on how to make it work. All I got were links to paid solutions on the Unity3d's Assets Store and a lot of different and complicated tutorials.
+When I started with Unity3d development I needed to use SQLite in my project and it was very hard to me to find a place with simple instructions on how to make it work. All I got were links to paid solutions on the Unity3d's Assets Store and a lot of different and complicated tutorials.
 
 At the end, I decided that there should be a simpler way and I created **SQLite4Unity3d**, a library that helps you to use SQLite in your Unity3d projects in a clear and easy way and works in **iOS, Android and Windows Phone** projects.
 
