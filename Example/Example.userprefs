@@ -1,0 +1,18 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\DataService.cs">
+    <Files>
+      <File FileName="Assets\Scripts\Person.cs" Line="15" Column="3" />
+      <File FileName="Assets\Scripts\DataService.cs" Line="85" Column="6" />
+      <File FileName="Assets\Scripts\ExistingDBScript.cs" Line="37" Column="3" />
+      <File FileName="Assets\Scripts\CreateDBScript.cs" Line="16" Column="22" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="C:\GitHubCode\SQLite4Unity3d\Example\Assets\Scripts\DataService.cs" line="13" />
+      <Breakpoint file="C:\GitHubCode\SQLite4Unity3d\Example\Assets\Scripts\ExampleScript.cs" line="9" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

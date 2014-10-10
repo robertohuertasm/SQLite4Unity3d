@@ -22,10 +22,16 @@ namespace SQLite4Unity3d
             //let's copy data base from resources to isolatedstorage
             using (var isf = IsolatedStorageFile.GetUserStoreForApplication())
             {
-                using (var fileStream = new IsolatedStorageFileStream(filename, FileMode.Create, isf))
-                    streamInfo.Stream.CopyTo(fileStream);
+                if (isf.FileExists(filename))
+                {
+                    using (var fileStream = 
+                        new IsolatedStorageFileStream(filename, FileMode.Create, isf))
+                    {
+                        streamInfo.Stream.CopyTo(fileStream);
+                    }    
+                } 
             }
-
+            
             return new SQLiteConnection(filename);
         }
     }
