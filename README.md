@@ -19,6 +19,10 @@ All you have to do to start using it in your project:
 # Example
 If you want to try it I've uploaded a small example that you will be able to find in the "Example" folder. Download the folder and open it with Unity3d to give it a try.
 
+# iOS particularities
+As you may know **iOS doesn't allow JIT compilation** so, generally speaking, you will have to be very careful when you use **reflection** in your code. For a more deeper explanation of this issue please refer to Google but making it short: you cannot create dynamic objects using reflection. How is this affecting SQLite4Unity3d? Well, **you can't use the linq syntax** when making queries to SQLite and **you will have to use the old sql syntax**.
+
+
 # Acknowledgements
 This project is based on the work of:
 
