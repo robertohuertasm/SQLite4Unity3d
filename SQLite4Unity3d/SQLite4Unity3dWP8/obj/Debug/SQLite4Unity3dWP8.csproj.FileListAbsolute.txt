@@ -1,6 +1,0 @@
-C:\GitHubCode\SQLite4Unity3d\SQLite4Unity3d\SQLite4Unity3dWP8\Bin\Debug\SQLite4Unity3d.dll
-C:\GitHubCode\SQLite4Unity3d\SQLite4Unity3d\SQLite4Unity3dWP8\Bin\Debug\SQLite4Unity3d.pdb
-C:\GitHubCode\SQLite4Unity3d\SQLite4Unity3d\SQLite4Unity3dWP8\Bin\Debug\Community.CsharpSqlite.WP7.dll
-C:\GitHubCode\SQLite4Unity3d\SQLite4Unity3d\SQLite4Unity3dWP8\obj\Debug\SQLite4Unity3dWP8.csprojResolveAssemblyReference.cache
-C:\GitHubCode\SQLite4Unity3d\SQLite4Unity3d\SQLite4Unity3dWP8\obj\Debug\SQLite4Unity3d.dll
-C:\GitHubCode\SQLite4Unity3d\SQLite4Unity3d\SQLite4Unity3dWP8\obj\Debug\SQLite4Unity3d.pdb
