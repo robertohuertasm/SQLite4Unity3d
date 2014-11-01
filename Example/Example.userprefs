@@ -1,18 +1,13 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\DataService.cs">
+  <MonoDevelop.Ide.Workspace />
+  <MonoDevelop.Ide.Workbench ActiveDocument="..\..\..\..\..\..\Working PROJECTS\TFS\MonkUnity\Trunk\Monk\Assets\Scripts\Monk\Core\Utils\Utilities.cs">
     <Files>
-      <File FileName="Assets\Scripts\Person.cs" Line="15" Column="3" />
-      <File FileName="Assets\Scripts\DataService.cs" Line="85" Column="6" />
-      <File FileName="Assets\Scripts\ExistingDBScript.cs" Line="37" Column="3" />
-      <File FileName="Assets\Scripts\CreateDBScript.cs" Line="16" Column="22" />
+      <File FileName="..\..\..\..\..\..\Working PROJECTS\TFS\MonkUnity\Trunk\Monk\Assets\Scripts\Monk\Core\GameManager.AppSettings.cs" Line="21" Column="1" />
+      <File FileName="..\..\..\..\..\..\Working PROJECTS\TFS\MonkUnity\Trunk\Monk\Assets\Scripts\Monk\Core\Utils\Utilities.cs" Line="18" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore>
-      <Breakpoint file="C:\GitHubCode\SQLite4Unity3d\Example\Assets\Scripts\DataService.cs" line="13" />
-      <Breakpoint file="C:\GitHubCode\SQLite4Unity3d\Example\Assets\Scripts\ExampleScript.cs" line="9" />
-    </BreakpointStore>
+    <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

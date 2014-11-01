@@ -1516,7 +1516,8 @@ namespace SQLite4Unity3d
 
             public object GetValue(object obj)
             {
-                return _prop.GetValue(obj, null);
+                return _prop.GetGetMethod().Invoke(obj, null);
+                //return _prop.GetValue(obj, null);
             }
         }
     }
@@ -2484,7 +2485,8 @@ namespace SQLite4Unity3d
 					if (mem.Member is PropertyInfo) {
 #endif
                         var m = (PropertyInfo)mem.Member;
-                        val = m.GetValue(obj, null);
+                        val = m.GetGetMethod().Invoke(obj, null);
+                        //val = m.GetValue(obj, null);
 #if !NETFX_CORE
                     }
                     else if (mem.Member.MemberType == MemberTypes.Field)
