@@ -1,5 +1,4 @@
-﻿
-namespace SQLite4Unity3d
+﻿namespace SQLite4Unity3d
 {
     public class Factory : ISQLiteConnectionFactory
     {
