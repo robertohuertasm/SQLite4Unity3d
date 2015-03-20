@@ -1,5 +1,12 @@
 Example/BUILDS/
+Example/Library
+Example/obj
+Example/ProjectSettings
 SQLite4Unity3d/SQLite4Unity3d/bin/
 SQLite4Unity3d/SQLite4Unity3d/obj/
 SQLite4Unity3d/SQLite4Unity3dWP8/bin/
 SQLite4Unity3d/SQLite4Unity3dWP8/obj/
+*.meta
+*.asset
+*.log
+*.info
