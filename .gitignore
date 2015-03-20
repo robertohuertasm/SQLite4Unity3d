@@ -1,7 +1,7 @@
-Example/BUILDS/
-Example/Library
-Example/obj
-Example/ProjectSettings
+Example/BUILDS/*
+Example/Library/*
+Example/obj/*
+Example/ProjectSettings/*
 Example_unity5/*
 SQLite4Unity3d/SQLite4Unity3d/bin/
 SQLite4Unity3d/SQLite4Unity3d/obj/
