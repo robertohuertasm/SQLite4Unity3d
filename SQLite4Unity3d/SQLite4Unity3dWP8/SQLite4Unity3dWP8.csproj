@@ -83,13 +83,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\SQLite4Unity3d\Shared\BaseClasses.cs">
+    <Compile Include="..\SQLite4Unity3d\BaseClasses.cs">
       <Link>BaseClasses.cs</Link>
     </Compile>
-    <Compile Include="..\SQLite4Unity3d\Shared\SQLiteNet.cs">
+    <Compile Include="..\SQLite4Unity3d\SQLiteNet.cs">
       <Link>SQLiteNet.cs</Link>
     </Compile>
-    <Compile Include="Factory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
