@@ -20,7 +20,12 @@ All you have to do to start using it in your project:
 If you want to try it I've uploaded a small example that you will be able to find in the "Example" folder. Download the folder and open it with Unity3d to give it a try.
 
 # iOS particularities
+**AOT**: 
 As you may know **iOS doesn't allow JIT compilation** so, generally speaking, you will have to be very careful when you use **reflection** in your code. For a more deeper explanation of this issue please refer to Google but making it short: you cannot create dynamic objects using reflection. How is this affecting SQLite4Unity3d? Well, **you can't use the linq syntax** when making queries to SQLite and **you will have to use the old sql syntax**.
+
+**UNITY 5**: 
+In order to avoid the 'Plugins colliding with each other' error when trying to deploy to iOS in Unity 5, you will have to manually exclude the x86 version of sqlite3.dll from iOS compilation using the [plugin inspector] (http://docs.unity3d.com/Manual/PluginInspector.html)
+
 
 
 # Acknowledgements
