@@ -1,6 +1,10 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace />
-  <MonoDevelop.Ide.Workbench />
+  <MonoDevelop.Ide.Workbench ActiveDocument="..\..\..\..\Desktop\SQLite4Unity3d\Example_unity5\Assets\Scripts\DataService.cs">
+    <Files>
+      <File FileName="..\..\..\..\Desktop\SQLite4Unity3d\Example_unity5\Assets\Scripts\DataService.cs" Line="6" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
