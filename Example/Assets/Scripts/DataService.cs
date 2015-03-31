@@ -8,11 +8,11 @@ using System.Collections.Generic;
 
 public class DataService  {
 
-	private SQLiteConnection _connection;
+	private ISQLiteConnection _connection;
 
 	public DataService(string DatabaseName){
 
-        
+        var factory = new Factory();
 
 #if UNITY_EDITOR
             var dbPath = string.Format(@"Assets/StreamingAssets/{0}", DatabaseName);
@@ -50,7 +50,7 @@ public class DataService  {
 
         var dbPath = filepath;
 #endif
-		_connection = new SQLiteConnection(dbPath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
+        _connection = factory.Create(dbPath);
         Debug.Log("Final PATH: " + dbPath);     
 
 	}
