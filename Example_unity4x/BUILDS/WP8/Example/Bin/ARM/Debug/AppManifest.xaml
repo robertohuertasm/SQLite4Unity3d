@@ -1,0 +1,14 @@
+﻿<Deployment xmlns="http://schemas.microsoft.com/client/2007/deployment" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" EntryPointAssembly="Example" EntryPointType="Example.App" RuntimeVersion="4.7.50308.0">
+  <Deployment.Parts>
+    <AssemblyPart x:Name="Example" Source="Example.dll" />
+    <AssemblyPart x:Name="Assembly-CSharp" Source="Assembly-CSharp.dll" />
+    <AssemblyPart x:Name="SQLite4Unity3d" Source="SQLite4Unity3d.dll" />
+    <AssemblyPart x:Name="UnityEngine" Source="UnityEngine.dll" />
+    <AssemblyPart x:Name="UnityEngine.UI" Source="UnityEngine.UI.dll" />
+    <AssemblyPart x:Name="WinRTBridge" Source="WinRTBridge.dll" />
+    <AssemblyPart x:Name="WinRTLegacy" Source="WinRTLegacy.dll" />
+    <AssemblyPart x:Name="Sqlite" Source="Sqlite.dll" />
+    <AssemblyPart x:Name="BridgeInterface" Source="BridgeInterface.dll" />
+    <AssemblyPart x:Name="UnityPlayer" Source="UnityPlayer.dll" />
+  </Deployment.Parts>
+</Deployment>

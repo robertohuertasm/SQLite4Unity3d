@@ -77,7 +77,7 @@ namespace SQLite4Unity3d
 		{
 			if (mapping != null && obj != null) {
 				this.Columns = from c in mapping.Columns
-							   where c.IsNullable == false && c.GetValue (obj) == null
+							   where c.IsNullable == false && c.GetValue(obj) == null
 							   select c;
 			}
 		}
@@ -1258,7 +1258,9 @@ namespace SQLite4Unity3d
             if (map.PK != null && map.PK.IsAutoGuid) {
                 var prop = objType.GetProperty(map.PK.PropertyName);
                 if (prop != null) {
-                    if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
+                    //if (prop.GetValue(obj, null).Equals(Guid.Empty)) { 
+                    if (prop.GetGetMethod().Invoke(obj, null).Equals(Guid.Empty))
+                    {
                         prop.SetValue(obj, Guid.NewGuid(), null);
                     }
                 }
@@ -1271,7 +1273,7 @@ namespace SQLite4Unity3d
 			var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
-				vals [i] = cols [i].GetValue (obj);
+				vals [i] = cols [i].GetValue(obj);
 			}
 			
 			var insertCmd = map.GetInsertCommand (this, extra);
@@ -1829,7 +1831,7 @@ namespace SQLite4Unity3d
 
 			public object GetValue (object obj)
 			{
-				return _prop.GetValue (obj, null);
+				return _prop.GetGetMethod().Invoke(obj, null);
 			}
 		}
 	}
@@ -2685,7 +2687,8 @@ namespace SQLite4Unity3d
 					if (mem.Member is PropertyInfo) {
 #endif
 						var m = (PropertyInfo)mem.Member;
-						val = m.GetValue (obj, null);
+						//val = m.GetValue (obj, null);
+                        val = m.GetGetMethod().Invoke(obj, null);
 #if !NETFX_CORE
 					} else if (mem.Member.MemberType == MemberTypes.Field) {
 #else
