@@ -57,7 +57,11 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>Bin\x86\Release</OutputPath>
+<<<<<<< HEAD
     <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_WP8_NATIVE_SQLITE;</DefineConstants>
+=======
+    <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_CSHARP_SQLITE</DefineConstants>
+>>>>>>> master
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
     <ErrorReport>prompt</ErrorReport>
@@ -78,7 +82,11 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>Bin\ARM\Release</OutputPath>
+<<<<<<< HEAD
     <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_WP8_NATIVE_SQLITE;</DefineConstants>
+=======
+    <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_CSHARP_SQLITE</DefineConstants>
+>>>>>>> master
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
     <ErrorReport>prompt</ErrorReport>
