@@ -57,15 +57,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>Bin\x86\Release</OutputPath>
-<<<<<<< HEAD:SQLite4Unity3d/SQLite4Unity3d/SQLite4Unity3dWP8/SQLite4Unity3dWP8.csproj
     <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_WP8_NATIVE_SQLITE;</DefineConstants>
-=======
-<<<<<<< HEAD
-    <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_WP8_NATIVE_SQLITE;</DefineConstants>
-=======
-    <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_CSHARP_SQLITE</DefineConstants>
->>>>>>> master
->>>>>>> origin/master:SQLite4Unity3d/SQLite4Unity3dWP8/SQLite4Unity3dWP8.csproj
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
     <ErrorReport>prompt</ErrorReport>
@@ -86,15 +78,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>Bin\ARM\Release</OutputPath>
-<<<<<<< HEAD:SQLite4Unity3d/SQLite4Unity3d/SQLite4Unity3dWP8/SQLite4Unity3dWP8.csproj
     <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_WP8_NATIVE_SQLITE;</DefineConstants>
-=======
-<<<<<<< HEAD
-    <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_WP8_NATIVE_SQLITE;</DefineConstants>
-=======
-    <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE;USE_CSHARP_SQLITE</DefineConstants>
->>>>>>> master
->>>>>>> origin/master:SQLite4Unity3d/SQLite4Unity3dWP8/SQLite4Unity3dWP8.csproj
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
     <ErrorReport>prompt</ErrorReport>
