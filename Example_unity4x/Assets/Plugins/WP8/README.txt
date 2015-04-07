@@ -3,6 +3,7 @@ It seems that Unity 4.x is not recognizing the folder structure when creating th
 'Could not load type 'UnityEngine.Internal.$Metadata[..]'
 
 You will have to follow these steps:
+0. If you're targeting a the emulator an not a real device, then when it says WP/x86 you must read WP/ARM and the other way around. i.e. 1-5 is written considering you want to deploy to a real device.
 1. In your Unity project, remove the WP/x86 folder.
 2. Put the content of the WP/ARM folder into WP and remove WP/ARM folder.
 3. Generate the project.
