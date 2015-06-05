@@ -142,7 +142,21 @@ namespace SQLite4Unity3d
 
 		public bool TimeExecution { get; set; }
 
+		#region debug tracing
+
 		public bool Trace { get; set; }
+
+		public delegate void TraceHandler (string message);
+		public event TraceHandler TraceEvent;
+
+		internal void InvokeTrace (string message)
+		{
+			if (TraceEvent != null) {
+				TraceEvent(message);
+			}
+		}
+
+		#endregion
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -1982,7 +1996,7 @@ namespace SQLite4Unity3d
 		public int ExecuteNonQuery ()
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing: " + this);
+				_conn.InvokeTrace ("Executing: " + this);
 			}
 			
 			var r = SQLite3.Result.OK;
@@ -2040,7 +2054,7 @@ namespace SQLite4Unity3d
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing Query: " + this);
+				_conn.InvokeTrace ("Executing Query: " + this);
 			}
 
 			var stmt = Prepare ();
@@ -2075,7 +2089,7 @@ namespace SQLite4Unity3d
 		public T ExecuteScalar<T> ()
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing Query: " + this);
+				_conn.InvokeTrace ("Executing Query: " + this);
 			}
 			
 			T val = default(T);
@@ -2291,7 +2305,7 @@ namespace SQLite4Unity3d
 		public int ExecuteNonQuery (object[] source)
 		{
 			if (Connection.Trace) {
-				Debug.WriteLine ("Executing: " + CommandText);
+				Connection.InvokeTrace ("Executing: " + CommandText);
 			}
 
 			var r = SQLite3.Result.OK;
