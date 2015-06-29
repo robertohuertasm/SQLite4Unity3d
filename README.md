@@ -1,5 +1,4 @@
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/codecoding/SQLite4Unity3d.svg)](http://isitmaintained.com/project/codecoding/SQLite4Unity3d "Average time to resolve an issue")
-
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/codecoding/SQLite4Unity3d.svg)](http://isitmaintained.com/project/codecoding/SQLite4Unity3d "Percentage of issues still open")
 
 # What's this?
