@@ -1,3 +1,7 @@
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/codecoding/SQLite4Unity3d.svg)](http://isitmaintained.com/project/codecoding/SQLite4Unity3d "Average time to resolve an issue")
+
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/codecoding/SQLite4Unity3d.svg)](http://isitmaintained.com/project/codecoding/SQLite4Unity3d "Percentage of issues still open")
+
 # What's this?
 When I started with Unity3d development I needed to use SQLite in my project and it was very hard to me to find a place with simple instructions on how to make it work. All I got were links to paid solutions on the Unity3d's Assets Store and a lot of different and complicated tutorials.
 
