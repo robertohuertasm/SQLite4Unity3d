@@ -1,3 +1,6 @@
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/codecoding/SQLite4Unity3d.svg)](http://isitmaintained.com/project/codecoding/SQLite4Unity3d "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/codecoding/SQLite4Unity3d.svg)](http://isitmaintained.com/project/codecoding/SQLite4Unity3d "Percentage of issues still open")
+
 # What's this?
 When I started with Unity3d development I needed to use SQLite in my project and it was very hard to me to find a place with simple instructions on how to make it work. All I got were links to paid solutions on the Unity3d's Assets Store and a lot of different and complicated tutorials.
 
@@ -17,22 +20,16 @@ All you have to do to start using it in your project:
 3. **You’re done!** Now you can get access to your database using sqlite-net.  ;P
 
 # Example
-If you want to try it I've uploaded a small example that you will be able to find in the "Example" folder. Download the folder and open it with Unity3d to give it a try.
+If you want to try it I've uploaded a small example that you will be able to find in the "Example" folder. Download the folder and open it with Unity3d to give it a try. You will notice that I've placed a specific example for Unity 4.x and Unity 5.
 
 # iOS particularities
-**AOT**: 
-As you may know **iOS doesn't allow JIT compilation** so, generally speaking, you will have to be very careful when you use **reflection** in your code. For a more deeper explanation of this issue please refer to Google but making it short: you cannot create dynamic objects using reflection. How is this affecting SQLite4Unity3d? Well, prior to this version you couldn't use very complicated queries. Now, for basic queries you will have iOS support. In case you stumple uppon a JIT compilation error it's time to **use the old sql syntax**. Besides, it's faster!
+As you may know **iOS doesn't allow JIT compilation** so, generally speaking, you will have to be very careful when you use **reflection** in your code. For a more deeper explanation of this issue please refer to Google but making it short: you cannot create dynamic objects using reflection. How is this affecting SQLite4Unity3d? Well, prior to this version you couldn't use very complicated queries. Now, **for basic queries you will have iOS support**. In case you stumble uppon a JIT compilation error it's time to use the old sql syntax.
 
-# UNITY 5 
-In order to avoid the 'Plugins colliding with each other' error when trying to deploy to iOS in Unity 5, you will have to manually exclude the x86 version of sqlite3.dll from iOS compilation using the [plugin inspector] (http://docs.unity3d.com/Manual/PluginInspector.html)
-
-**Windows Phone support is lost** at the moment! :( So if you need to publish for this platform, please use the 4.x Unity version.
-
+# Plugins in several platforms
+In general you won't find any issues with Android and iOS. When you start deploying your **WP version**, please take a look at the **readme files inside the plugins folder**. They will help you make it work without problems.
 
 # Acknowledgements
 This project is based on the work of:
-
-- [@MvvmCross](https://github.com/MvvmCross/MvvmCross) - License: developed and distributed under Ms-Pl - see http://opensource.org/licenses/ms-pl.html
 
 - [Sqlite-net](https://github.com/praeclarum/sqlite-net) - License: custom - see https://github.com/praeclarum/sqlite-net/blob/master/license.md
 
