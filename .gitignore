@@ -14,3 +14,5 @@ SQLite4Unity3d/SQLite4Unity3dWP8/obj/
 *.db
 SQLite4Unity3d/SQLite4Unity3d/SQLite4Unity3dWP8/Bin/Debug/Community.CsharpSqlite.WP7.dll
 SQLite4Unity3d/SQLite4Unity3d/SQLite4Unity3dWP8/Bin/Release/Community.CsharpSqlite.WP7.dll
+*.suo
+SQLite4Unity3d/SQLite4Unity3d.v12.suo
