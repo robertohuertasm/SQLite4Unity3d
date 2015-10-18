@@ -1,0 +1,24 @@
+fileFormatVersion: 2
+guid: d40f23fcaadafff4c9c4043e7acdd3a8
+timeCreated: 1445131379
+licenseType: Free
+PluginImporter:
+  serializedVersion: 1
+  iconMap: {}
+  executionOrder: {}
+  isPreloaded: 0
+  platformData:
+    Any:
+      enabled: 0
+      settings: {}
+    Editor:
+      enabled: 0
+      settings:
+        DefaultValueInitialized: true
+    WP8:
+      enabled: 1
+      settings:
+        CPU: ARM
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
