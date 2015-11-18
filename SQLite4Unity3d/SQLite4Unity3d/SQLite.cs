@@ -418,8 +418,18 @@ namespace SQLite4Unity3d
 
 			foreach (var indexName in indexes.Keys) {
 				var index = indexes[indexName];
-				var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
-                count += CreateIndex(indexName, index.TableName, columns, index.Unique);
+				string[] columnNames = new string[index.Columns.Count];
+				if (index.Columns.Count == 1) {
+					columnNames[0] = index.Columns[0].ColumnName;
+				} else {
+					index.Columns.Sort((lhs, rhs) => {
+						return lhs.Order - rhs.Order;
+					});
+					for (int i = 0, end = index.Columns.Count; i < end; ++i) {
+						columnNames[i] = index.Columns[i].ColumnName;
+					}
+				}
+				count += CreateIndex(indexName, index.TableName, columnNames, index.Unique);
 			}
 			
 			return count;
