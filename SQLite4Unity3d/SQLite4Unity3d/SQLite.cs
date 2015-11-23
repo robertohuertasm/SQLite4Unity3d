@@ -281,7 +281,9 @@ namespace SQLite4Unity3d
 		/// Used to list some code that we want the MonoTouch linker
 		/// to see, but that we never want to actually execute.
 		/// </summary>
+		#pragma warning disable 649
 		static bool _preserveDuringLinkMagic;
+		#pragma warning restore 649
 
 		/// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -447,8 +449,18 @@ namespace SQLite4Unity3d
 
 			foreach (var indexName in indexes.Keys) {
 				var index = indexes[indexName];
-				var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
-                count += CreateIndex(indexName, index.TableName, columns, index.Unique);
+				string[] columnNames = new string[index.Columns.Count];
+				if (index.Columns.Count == 1) {
+					columnNames[0] = index.Columns[0].ColumnName;
+				} else {
+					index.Columns.Sort((lhs, rhs) => {
+						return lhs.Order - rhs.Order;
+					});
+					for (int i = 0, end = index.Columns.Count; i < end; ++i) {
+						columnNames[i] = index.Columns[i].ColumnName;
+					}
+				}
+				count += CreateIndex(indexName, index.TableName, columnNames, index.Unique);
 			}
 			
 			return count;
