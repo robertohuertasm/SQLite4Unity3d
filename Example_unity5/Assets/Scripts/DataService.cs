@@ -39,9 +39,14 @@ public class DataService  {
                 File.Copy(loadDb, filepath);
 
 #elif UNITY_WINRT
-			var loadDb = Application.dataPath + "/StreamingAssets/" + DatabaseName;  // this is the path to your StreamingAssets in iOS
-			// then save to Application.persistentDataPath
-			File.Copy(loadDb, filepath);
+		var loadDb = Application.dataPath + "/StreamingAssets/" + DatabaseName;  // this is the path to your StreamingAssets in iOS
+		// then save to Application.persistentDataPath
+		File.Copy(loadDb, filepath);
+#else
+	var loadDb = Application.dataPath + "/StreamingAssets/" + DatabaseName;  // this is the path to your StreamingAssets in iOS
+	// then save to Application.persistentDataPath
+	File.Copy(loadDb, filepath);
+
 #endif
 
             Debug.Log("Database written");
