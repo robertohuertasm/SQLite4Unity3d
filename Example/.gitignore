@@ -21,3 +21,8 @@
 
 # Unity3D Generated File On Crash Reports
 sysinfo.txt
+
+# Unity3d Generated files when building
+*.pfx
+*.pfx.meta
+UWP/

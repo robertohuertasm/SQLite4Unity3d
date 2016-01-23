@@ -61,7 +61,7 @@ PluginImporter:
       enabled: 0
       settings:
         CPU: AnyCPU
-        DontProcess: True
+        DontProcess: False
         PlaceholderPath: 
         SDK: AnySDK
         ScriptingBackend: AnyScriptingBackend

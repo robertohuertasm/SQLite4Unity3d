@@ -22,39 +22,39 @@ PluginImporter:
         DefaultValueInitialized: true
         OS: AnyOS
     Linux:
-      enabled: 0
+      enabled: 1
       settings:
         CPU: None
     Linux64:
-      enabled: 0
+      enabled: 1
       settings:
         CPU: x86_64
     LinuxUniversal:
-      enabled: 0
+      enabled: 1
       settings:
-        CPU: None
+        CPU: AnyCPU
     OSXIntel:
-      enabled: 0
+      enabled: 1
       settings:
         CPU: None
     OSXIntel64:
-      enabled: 0
+      enabled: 1
       settings:
         CPU: AnyCPU
     OSXUniversal:
-      enabled: 0
+      enabled: 1
       settings:
-        CPU: None
+        CPU: AnyCPU
     SamsungTV:
       enabled: 0
       settings:
         STV_MODEL: STANDARD_13
     Win:
-      enabled: 0
+      enabled: 1
       settings:
         CPU: None
     Win64:
-      enabled: 0
+      enabled: 1
       settings:
         CPU: AnyCPU
     WindowsStoreApps:
@@ -66,7 +66,7 @@ PluginImporter:
         SDK: AnySDK
         ScriptingBackend: AnyScriptingBackend
     iOS:
-      enabled: 0
+      enabled: 1
       settings:
         CompileFlags: 
         FrameworkDependencies: 
