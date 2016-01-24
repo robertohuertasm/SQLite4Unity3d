@@ -27,3 +27,4 @@ sysinfo.txt
 *.pfx
 *.pfx.meta
 UWP/
+!Assets/Plugin/**/*.dll
