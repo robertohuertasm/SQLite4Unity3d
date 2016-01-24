@@ -31,6 +31,10 @@ Android configuration and deployment is very straight forward. Take a look at th
 # iOS particularities
 As you may know **iOS doesn't allow JIT compilation** so, generally speaking, you will have to be very careful when you use **reflection** in your code. For a more deeper explanation of this issue please refer to Google but making it short: you cannot create dynamic objects using reflection. How is this affecting SQLite4Unity3d? Well, prior to this version you couldn't use very complicated queries. Now, **for basic queries you will have iOS support**. In case you stumble uppon a JIT compilation error it's time to use the old sql syntax.
 
+Check this video to know how to proceed with iOS deployment:
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=a4HXlGbO_2c" target="_blank"><img src="http://img.youtube.com/vi/a4HXlGbO_2c/0.jpg" alt="UWP"  border="10" /></a>
+
 # Windows particularities
 In general you won't find any issues with Android and iOS. For **Windows versions**, please take a look at the **the video below** for more details on how to proceed:
 
