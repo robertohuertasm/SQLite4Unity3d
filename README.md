@@ -27,7 +27,9 @@ If you want to try it I've uploaded a small example that you will be able to fin
 As you may know **iOS doesn't allow JIT compilation** so, generally speaking, you will have to be very careful when you use **reflection** in your code. For a more deeper explanation of this issue please refer to Google but making it short: you cannot create dynamic objects using reflection. How is this affecting SQLite4Unity3d? Well, prior to this version you couldn't use very complicated queries. Now, **for basic queries you will have iOS support**. In case you stumble uppon a JIT compilation error it's time to use the old sql syntax.
 
 # Windows particularities
-In general you won't find any issues with Android and iOS. For **Windows versions**, please take a look at the **wiki** for more details on how to proceed. 
+In general you won't find any issues with Android and iOS. For **Windows versions**, please take a look at the **the video below** for more details on how to proceed:
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=zVXr70fYxoA" target="_blank"><img src="http://img.youtube.com/vi/zVXr70fYxoA/0.jpg" alt="UWP"  border="10" /></a>
 
 # Acknowledgements
 This project is based on the work of:
