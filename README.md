@@ -4,7 +4,7 @@
 # What's this?
 When I started with Unity3d development I needed to use SQLite in my project and it was very hard to me to find a place with simple instructions on how to make it work. All I got were links to paid solutions on the Unity3d's Assets Store and a lot of different and complicated tutorials.
 
-At the end, I decided that there should be a simpler way and I created **SQLite4Unity3d**, a plugin that helps you to use SQLite in your Unity3d projects in a clear and easy way and works in **iOS, Android and Windows** projects.
+At the end, I decided that there should be a simpler way and I created **SQLite4Unity3d**, a plugin that helps you to use SQLite in your Unity3d projects in a clear and easy way and works in **iOS, Mac, Android and Windows** projects.
 
 It uses the great [sqlite-net](https://github.com/praeclarum/sqlite-net) library as a base so you will have **Linq besides sql**. For a further reference on what possibilities you have available with this library I encourage you to visit [its github repository](https://github.com/praeclarum/sqlite-net). 
 
