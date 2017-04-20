@@ -23,7 +23,7 @@ All you have to do to start using it in your project:
 # Example
 If you want to try it I've uploaded a small example that you will be able to find in the "Example" folder. Download the folder and open it with Unity3d to give it a try. It contains classes that will help you to start.
 
-##Android particularities
+## Android particularities
 Android configuration and deployment is very straight forward. Take a look at the **following video** if you want to get a picture on how to proceed:
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=oPEl0mzeYoQ" target="_blank"><img src="http://img.youtube.com/vi/oPEl0mzeYoQ/0.jpg" alt="UWP"  border="10" /></a>
