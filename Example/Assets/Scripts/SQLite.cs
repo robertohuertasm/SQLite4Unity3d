@@ -1578,6 +1578,14 @@ namespace SQLite4Unity3d
 			get { return true; }
 			set { /* throw?  */ }
 		}
+
+		public UniqueAttribute() : base()
+		{
+		}
+
+		public UniqueAttribute(string name, int order) : base(name, order)
+		{
+		}
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
