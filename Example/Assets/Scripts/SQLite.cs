@@ -130,7 +130,7 @@ namespace SQLite4Unity3d
 		private Dictionary<string, TableMapping> _mappings = null;
 		private Dictionary<string, TableMapping> _tables = null;
 		private System.Diagnostics.Stopwatch _sw;
-		private long _elapsedMilliseconds = 0;
+		private TimeSpan _elapsed = default(TimeSpan);
 
 		private int _transactionDepth = 0;
 		private Random _rand = new Random ();
@@ -611,8 +611,8 @@ namespace SQLite4Unity3d
 			
 			if (TimeExecution) {
 				_sw.Stop ();
-				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+				_elapsed += _sw.Elapsed;
+				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsed.TotalMilliseconds / 1000.0));
 			}
 			
 			return r;
@@ -634,8 +634,8 @@ namespace SQLite4Unity3d
 			
 			if (TimeExecution) {
 				_sw.Stop ();
-				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+				_elapsed += _sw.Elapsed;
+				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsed.TotalMilliseconds / 1000.0));
 			}
 			
 			return r;
