@@ -140,6 +140,21 @@ namespace SQLite4Unity3d
 
 		public string DatabasePath { get; private set; }
 
+		// Dictionary of synchronization objects.
+		//
+		// To prevent database disruption, a database file must be accessed *synchronously*.
+		// For the purpose we create synchronous objects for each database file and store in the
+		// static dictionary to share it among all connections.
+		// The key of the dictionary is database file path and its value is an object to be used
+		// by lock() statement.
+		//
+		// Use case:
+		// - database file lock is done implicitly and automatically.
+		// - To prepend deadlock, application may lock a database file explicity by either way:
+		//   - RunInTransaction(Action) locks the database during the transaction (for insert/update)
+		//   - RunInDatabaseLock(Action) similarly locks the database but no transaction (for query)
+		private static Dictionary<string, object> syncObjects = new Dictionary<string, object>();
+
 		#region debug tracing
 
 		public bool Trace { get; set; }
@@ -204,6 +219,7 @@ namespace SQLite4Unity3d
 				throw new ArgumentException ("Must be specified", "databasePath");
 
 			DatabasePath = databasePath;
+			mayCreateSyncObject(databasePath);
 
 #if NETFX_CORE
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
@@ -240,9 +256,22 @@ namespace SQLite4Unity3d
 			}
 		}
 
-        public void EnableLoadExtension(int onoff)
-        {
-            SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
+		void mayCreateSyncObject(string databasePath)
+		{
+			if (!syncObjects.ContainsKey(databasePath)) {
+				syncObjects[databasePath] = new object();
+			}
+		}
+
+		/// <summary>
+		/// Gets the synchronous object, to be lock the database file for updating.
+		/// </summary>
+		/// <value>The sync object.</value>
+		public object SyncObject { get { return syncObjects[DatabasePath];} }
+
+		public void EnableLoadExtension(int onoff)
+		{
+			SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
 			if (r != SQLite3.Result.OK) {
 				string msg = SQLite3.GetErrmsg (Handle);
 				throw SQLiteException.New (r, msg);
@@ -261,7 +290,9 @@ namespace SQLite4Unity3d
 		/// Used to list some code that we want the MonoTouch linker
 		/// to see, but that we never want to actually execute.
 		/// </summary>
+		#pragma warning disable 649
 		static bool _preserveDuringLinkMagic;
+		#pragma warning restore 649
 
 		/// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -427,8 +458,18 @@ namespace SQLite4Unity3d
 
 			foreach (var indexName in indexes.Keys) {
 				var index = indexes[indexName];
-				var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
-                count += CreateIndex(indexName, index.TableName, columns, index.Unique);
+				string[] columnNames = new string[index.Columns.Count];
+				if (index.Columns.Count == 1) {
+					columnNames[0] = index.Columns[0].ColumnName;
+				} else {
+					index.Columns.Sort((lhs, rhs) => {
+						return lhs.Order - rhs.Order;
+					});
+					for (int i = 0, end = index.Columns.Count; i < end; ++i) {
+						columnNames[i] = index.Columns[i].ColumnName;
+					}
+				}
+				count += CreateIndex(indexName, index.TableName, columnNames, index.Unique);
 			}
 			
 			return count;
@@ -990,7 +1031,7 @@ namespace SQLite4Unity3d
 			} catch (SQLiteException) {
 				if (!noThrow)
 					throw;
-            
+			
 			}
 			// No need to rollback if there are no transactions open.
 		}
@@ -1057,12 +1098,27 @@ namespace SQLite4Unity3d
 		public void RunInTransaction (Action action)
 		{
 			try {
-				var savePoint = SaveTransactionPoint ();
-				action ();
-				Release (savePoint);
+				lock (syncObjects[DatabasePath]) {
+					var savePoint = SaveTransactionPoint ();
+					action ();
+					Release (savePoint);
+				}
 			} catch (Exception) {
 				Rollback ();
 				throw;
+			}
+		}
+
+		/// <summary>
+		/// Executes <param name="action"> while blocking other threads to access the same database.
+		/// </summary>
+		/// <param name="action">
+		/// The <see cref="Action"/> to perform within a lock.
+		/// </param>
+		public void RunInDatabaseLock (Action action)
+		{
+			lock (syncObjects[DatabasePath]) {
+				action ();
 			}
 		}
 
@@ -1278,14 +1334,16 @@ namespace SQLite4Unity3d
                 }
             }
 #else
-            if (map.PK != null && map.PK.IsAutoGuid) {
-                var prop = objType.GetProperty(map.PK.PropertyName);
-                if (prop != null) {
-                    if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
-                        prop.SetValue(obj, Guid.NewGuid(), null);
-                    }
-                }
-            }
+			if (map.PK != null && map.PK.IsAutoGuid) {
+				var prop = objType.GetProperty(map.PK.PropertyName);
+				if (prop != null) {
+					//if (prop.GetValue(obj, null).Equals(Guid.Empty)) { 
+					if (prop.GetGetMethod().Invoke(obj, null).Equals(Guid.Empty))
+					{
+						prop.SetValue(obj, Guid.NewGuid(), null);
+					}
+				}
+			}
 #endif
 
 
@@ -1860,7 +1918,7 @@ namespace SQLite4Unity3d
 
 			public object GetValue (object obj)
 			{
-				return _prop.GetValue (obj, null);
+				return _prop.GetGetMethod().Invoke(obj, null);
 			}
 		}
 	}
@@ -2015,9 +2073,11 @@ namespace SQLite4Unity3d
 			}
 			
 			var r = SQLite3.Result.OK;
-			var stmt = Prepare ();
-			r = SQLite3.Step (stmt);
-			Finalize (stmt);
+			lock (_conn.SyncObject) {
+				var stmt = Prepare ();
+				r = SQLite3.Step (stmt);
+				Finalize(stmt);
+			}
 			if (r == SQLite3.Result.Done) {
 				int rowsAffected = SQLite3.Changes (_conn.Handle);
 				return rowsAffected;
@@ -2072,32 +2132,31 @@ namespace SQLite4Unity3d
 				_conn.InvokeTrace ("Executing Query: " + this);
 			}
 
-			var stmt = Prepare ();
-			try
-			{
-				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+			lock (_conn.SyncObject) {
+				var stmt = Prepare ();
+				try {
+					var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
 
-				for (int i = 0; i < cols.Length; i++) {
-					var name = SQLite3.ColumnName16 (stmt, i);
-					cols [i] = map.FindColumn (name);
-				}
-			
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var obj = Activator.CreateInstance(map.MappedType);
 					for (int i = 0; i < cols.Length; i++) {
-						if (cols [i] == null)
-							continue;
-						var colType = SQLite3.ColumnType (stmt, i);
-						var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
-						cols [i].SetValue (obj, val);
- 					}
-					OnInstanceCreated (obj);
-					yield return (T)obj;
+						var name = SQLite3.ColumnName16 (stmt, i);
+						cols [i] = map.FindColumn (name);
+					}
+			
+					while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+						var obj = Activator.CreateInstance(map.MappedType);
+						for (int i = 0; i < cols.Length; i++) {
+							if (cols [i] == null)
+								continue;
+							var colType = SQLite3.ColumnType (stmt, i);
+							var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
+							cols [i].SetValue (obj, val);
+						}
+						OnInstanceCreated (obj);
+						yield return (T)obj;
+					}
+				} finally {
+					SQLite3.Finalize(stmt);
 				}
-			}
-			finally
-			{
-				SQLite3.Finalize(stmt);
 			}
 		}
 
@@ -2109,26 +2168,25 @@ namespace SQLite4Unity3d
 			
 			T val = default(T);
 			
-			var stmt = Prepare ();
+			lock (_conn.SyncObject) {
+				var stmt = Prepare();
 
-            try
-            {
-                var r = SQLite3.Step (stmt);
-                if (r == SQLite3.Result.Row) {
-                    var colType = SQLite3.ColumnType (stmt, 0);
-                    val = (T)ReadCol (stmt, 0, colType, typeof(T));
-                }
-                else if (r == SQLite3.Result.Done) {
-                }
-                else
-                {
-                    throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
-                }
-            }
-            finally
-            {
-                Finalize (stmt);
-            }
+				try {
+					var r = SQLite3.Step (stmt);
+					if (r == SQLite3.Result.Row) {
+						var colType = SQLite3.ColumnType (stmt, 0);
+						val = (T)ReadCol (stmt, 0, colType, typeof(T));
+					}
+					else if (r == SQLite3.Result.Done) {
+					}
+					else
+					{
+						throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+					}
+				} finally {
+					Finalize (stmt);
+				}
+			}
 			
 			return val;
 		}
@@ -2716,7 +2774,8 @@ namespace SQLite4Unity3d
 					if (mem.Member is PropertyInfo) {
 #endif
 						var m = (PropertyInfo)mem.Member;
-						val = m.GetValue (obj, null);
+						//val = m.GetValue (obj, null);
+						val = m.GetGetMethod().Invoke(obj, null);
 #if !NETFX_CORE
 					} else if (mem.Member.MemberType == MemberTypes.Field) {
 #else
