@@ -140,9 +140,32 @@ namespace SQLite4Unity3d
 
 		public string DatabasePath { get; private set; }
 
-		public bool TimeExecution { get; set; }
+		#region debug tracing
 
 		public bool Trace { get; set; }
+        public bool TimeExecution { get; set; }
+
+		public delegate void TraceHandler (string message);
+		public event TraceHandler TraceEvent;
+
+		internal void InvokeTrace (string message)
+		{
+			if (TraceEvent != null) {
+				TraceEvent(message);
+			}
+		}
+
+		public delegate void TimeExecutionHandler (TimeSpan executionTime, TimeSpan totalExecutionTime);
+		public event TimeExecutionHandler TimeExecutionEvent;
+
+		internal void InvokeTimeExecution(TimeSpan executionTime, TimeSpan totalExecutionTime)
+		{
+			if (TimeExecutionEvent != null) {
+				TimeExecutionEvent(executionTime, totalExecutionTime);
+			}
+		}
+
+		#endregion
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -612,7 +635,7 @@ namespace SQLite4Unity3d
 			if (TimeExecution) {
 				_sw.Stop ();
 				_elapsed += _sw.Elapsed;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsed.TotalMilliseconds / 1000.0));
+				this.InvokeTimeExecution (_sw.Elapsed, _elapsed);
 			}
 			
 			return r;
@@ -635,7 +658,7 @@ namespace SQLite4Unity3d
 			if (TimeExecution) {
 				_sw.Stop ();
 				_elapsed += _sw.Elapsed;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsed.TotalMilliseconds / 1000.0));
+				this.InvokeTimeExecution (_sw.Elapsed, _elapsed);
 			}
 			
 			return r;
@@ -1988,7 +2011,7 @@ namespace SQLite4Unity3d
 		public int ExecuteNonQuery ()
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing: " + this);
+				_conn.InvokeTrace ("Executing: " + this);
 			}
 			
 			var r = SQLite3.Result.OK;
@@ -2046,7 +2069,7 @@ namespace SQLite4Unity3d
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing Query: " + this);
+				_conn.InvokeTrace ("Executing Query: " + this);
 			}
 
 			var stmt = Prepare ();
@@ -2081,7 +2104,7 @@ namespace SQLite4Unity3d
 		public T ExecuteScalar<T> ()
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing Query: " + this);
+				_conn.InvokeTrace ("Executing Query: " + this);
 			}
 			
 			T val = default(T);
@@ -2297,7 +2320,7 @@ namespace SQLite4Unity3d
 		public int ExecuteNonQuery (object[] source)
 		{
 			if (Connection.Trace) {
-				Debug.WriteLine ("Executing: " + CommandText);
+				Connection.InvokeTrace ("Executing: " + CommandText);
 			}
 
 			var r = SQLite3.Result.OK;
