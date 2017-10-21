@@ -77,7 +77,7 @@ namespace SQLite4Unity3d
 		{
 			if (mapping != null && obj != null) {
 				this.Columns = from c in mapping.Columns
-							   where c.IsNullable == false && c.GetValue (obj) == null
+							   where c.IsNullable == false && c.GetValue(obj) == null
 							   select c;
 			}
 		}
@@ -109,16 +109,16 @@ namespace SQLite4Unity3d
 		ProtectionNone = 0x00400000
 	}
 
-    [Flags]
-    public enum CreateFlags
-    {
-        None = 0,
-        ImplicitPK = 1,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
-        ImplicitIndex = 2, // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
-        AllImplicit = 3,   // do both above
+	[Flags]
+	public enum CreateFlags
+	{
+		None = 0,
+		ImplicitPK = 1,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
+		ImplicitIndex = 2, // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
+		AllImplicit = 3,   // do both above
 
-        AutoIncPK = 4      // force PK field to be auto inc
-    }
+		AutoIncPK = 4      // force PK field to be auto inc
+	}
 
 	/// <summary>
 	/// Represents an open connection to a SQLite database.
@@ -130,7 +130,7 @@ namespace SQLite4Unity3d
 		private Dictionary<string, TableMapping> _mappings = null;
 		private Dictionary<string, TableMapping> _tables = null;
 		private System.Diagnostics.Stopwatch _sw;
-		private long _elapsedMilliseconds = 0;
+		private TimeSpan _elapsed = default(TimeSpan);
 
 		private int _transactionDepth = 0;
 		private Random _rand = new Random ();
@@ -140,9 +140,47 @@ namespace SQLite4Unity3d
 
 		public string DatabasePath { get; private set; }
 
-		public bool TimeExecution { get; set; }
+		// Dictionary of synchronization objects.
+		//
+		// To prevent database disruption, a database file must be accessed *synchronously*.
+		// For the purpose we create synchronous objects for each database file and store in the
+		// static dictionary to share it among all connections.
+		// The key of the dictionary is database file path and its value is an object to be used
+		// by lock() statement.
+		//
+		// Use case:
+		// - database file lock is done implicitly and automatically.
+		// - To prepend deadlock, application may lock a database file explicity by either way:
+		//   - RunInTransaction(Action) locks the database during the transaction (for insert/update)
+		//   - RunInDatabaseLock(Action) similarly locks the database but no transaction (for query)
+		private static Dictionary<string, object> syncObjects = new Dictionary<string, object>();
+
+		#region debug tracing
 
 		public bool Trace { get; set; }
+        public bool TimeExecution { get; set; }
+
+		public delegate void TraceHandler (string message);
+		public event TraceHandler TraceEvent;
+
+		internal void InvokeTrace (string message)
+		{
+			if (TraceEvent != null) {
+				TraceEvent(message);
+			}
+		}
+
+		public delegate void TimeExecutionHandler (TimeSpan executionTime, TimeSpan totalExecutionTime);
+		public event TimeExecutionHandler TimeExecutionEvent;
+
+		internal void InvokeTimeExecution(TimeSpan executionTime, TimeSpan totalExecutionTime)
+		{
+			if (TimeExecutionEvent != null) {
+				TimeExecutionEvent(executionTime, totalExecutionTime);
+			}
+		}
+
+		#endregion
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -181,6 +219,7 @@ namespace SQLite4Unity3d
 				throw new ArgumentException ("Must be specified", "databasePath");
 
 			DatabasePath = databasePath;
+			mayCreateSyncObject(databasePath);
 
 #if NETFX_CORE
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
@@ -189,7 +228,7 @@ namespace SQLite4Unity3d
 			Sqlite3DatabaseHandle handle;
 
 #if SILVERLIGHT || USE_CSHARP_SQLITE
-            var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
+			var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
 #else
 			// open using the byte[]
 			// in the case where the path may include Unicode
@@ -217,14 +256,27 @@ namespace SQLite4Unity3d
 			}
 		}
 
-        public void EnableLoadExtension(int onoff)
-        {
-            SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
+		void mayCreateSyncObject(string databasePath)
+		{
+			if (!syncObjects.ContainsKey(databasePath)) {
+				syncObjects[databasePath] = new object();
+			}
+		}
+
+		/// <summary>
+		/// Gets the synchronous object, to be lock the database file for updating.
+		/// </summary>
+		/// <value>The sync object.</value>
+		public object SyncObject { get { return syncObjects[DatabasePath];} }
+
+		public void EnableLoadExtension(int onoff)
+		{
+			SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
 			if (r != SQLite3.Result.OK) {
 				string msg = SQLite3.GetErrmsg (Handle);
 				throw SQLiteException.New (r, msg);
 			}
-        }
+		}
 
 		static byte[] GetNullTerminatedUtf8 (string s)
 		{
@@ -238,7 +290,9 @@ namespace SQLite4Unity3d
 		/// Used to list some code that we want the MonoTouch linker
 		/// to see, but that we never want to actually execute.
 		/// </summary>
+		#pragma warning disable 649
 		static bool _preserveDuringLinkMagic;
+		#pragma warning restore 649
 
 		/// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -270,14 +324,14 @@ namespace SQLite4Unity3d
 		/// <param name="type">
 		/// The type whose mapping to the database is returned.
 		/// </param>         
-        /// <param name="createFlags">
+		/// <param name="createFlags">
 		/// Optional flags allowing implicit PK and indexes based on naming conventions
 		/// </param>     
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-        public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+		public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
 		{
 			if (_mappings == null) {
 				_mappings = new Dictionary<string, TableMapping> ();
@@ -349,11 +403,11 @@ namespace SQLite4Unity3d
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <param name="ty">Type to reflect to a database table.</param>
-        /// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>  
+		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>  
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-        public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
+		public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
 			if (_tables == null) {
 				_tables = new Dictionary<string, TableMapping> ();
@@ -404,92 +458,102 @@ namespace SQLite4Unity3d
 
 			foreach (var indexName in indexes.Keys) {
 				var index = indexes[indexName];
-				var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
-                count += CreateIndex(indexName, index.TableName, columns, index.Unique);
+				string[] columnNames = new string[index.Columns.Count];
+				if (index.Columns.Count == 1) {
+					columnNames[0] = index.Columns[0].ColumnName;
+				} else {
+					index.Columns.Sort((lhs, rhs) => {
+						return lhs.Order - rhs.Order;
+					});
+					for (int i = 0, end = index.Columns.Count; i < end; ++i) {
+						columnNames[i] = index.Columns[i].ColumnName;
+					}
+				}
+				count += CreateIndex(indexName, index.TableName, columnNames, index.Unique);
 			}
 			
 			return count;
 		}
 
-        /// <summary>
-        /// Creates an index for the specified table and columns.
-        /// </summary>
-        /// <param name="indexName">Name of the index to create</param>
-        /// <param name="tableName">Name of the database table</param>
-        /// <param name="columnNames">An array of column names to index</param>
-        /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
-        {
-            const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
-            var sql = String.Format(sqlFormat, tableName, string.Join ("\", \"", columnNames), unique ? "unique" : "", indexName);
-            return Execute(sql);
-        }
+		/// <summary>
+		/// Creates an index for the specified table and columns.
+		/// </summary>
+		/// <param name="indexName">Name of the index to create</param>
+		/// <param name="tableName">Name of the database table</param>
+		/// <param name="columnNames">An array of column names to index</param>
+		/// <param name="unique">Whether the index should be unique</param>
+		public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
+		{
+			const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
+			var sql = String.Format(sqlFormat, tableName, string.Join ("\", \"", columnNames), unique ? "unique" : "", indexName);
+			return Execute(sql);
+		}
 
-        /// <summary>
-        /// Creates an index for the specified table and column.
-        /// </summary>
-        /// <param name="indexName">Name of the index to create</param>
-        /// <param name="tableName">Name of the database table</param>
-        /// <param name="columnName">Name of the column to index</param>
-        /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
-        {
-            return CreateIndex(indexName, tableName, new string[] { columnName }, unique);
-        }
-        
-        /// <summary>
-        /// Creates an index for the specified table and column.
-        /// </summary>
-        /// <param name="tableName">Name of the database table</param>
-        /// <param name="columnName">Name of the column to index</param>
-        /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string tableName, string columnName, bool unique = false)
-        {
-            return CreateIndex(tableName + "_" + columnName, tableName, columnName, unique);
-        }
+		/// <summary>
+		/// Creates an index for the specified table and column.
+		/// </summary>
+		/// <param name="indexName">Name of the index to create</param>
+		/// <param name="tableName">Name of the database table</param>
+		/// <param name="columnName">Name of the column to index</param>
+		/// <param name="unique">Whether the index should be unique</param>
+		public int CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
+		{
+			return CreateIndex(indexName, tableName, new string[] { columnName }, unique);
+		}
+		
+		/// <summary>
+		/// Creates an index for the specified table and column.
+		/// </summary>
+		/// <param name="tableName">Name of the database table</param>
+		/// <param name="columnName">Name of the column to index</param>
+		/// <param name="unique">Whether the index should be unique</param>
+		public int CreateIndex(string tableName, string columnName, bool unique = false)
+		{
+			return CreateIndex(tableName + "_" + columnName, tableName, columnName, unique);
+		}
 
-        /// <summary>
-        /// Creates an index for the specified table and columns.
-        /// </summary>
-        /// <param name="tableName">Name of the database table</param>
-        /// <param name="columnNames">An array of column names to index</param>
-        /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string tableName, string[] columnNames, bool unique = false)
-        {
-            return CreateIndex(tableName + "_" + string.Join ("_", columnNames), tableName, columnNames, unique);
-        }
+		/// <summary>
+		/// Creates an index for the specified table and columns.
+		/// </summary>
+		/// <param name="tableName">Name of the database table</param>
+		/// <param name="columnNames">An array of column names to index</param>
+		/// <param name="unique">Whether the index should be unique</param>
+		public int CreateIndex(string tableName, string[] columnNames, bool unique = false)
+		{
+			return CreateIndex(tableName + "_" + string.Join ("_", columnNames), tableName, columnNames, unique);
+		}
 
-        /// <summary>
-        /// Creates an index for the specified object property.
-        /// e.g. CreateIndex<Client>(c => c.Name);
-        /// </summary>
-        /// <typeparam name="T">Type to reflect to a database table.</typeparam>
-        /// <param name="property">Property to index</param>
-        /// <param name="unique">Whether the index should be unique</param>
-        public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
-        {
-            MemberExpression mx;
-            if (property.Body.NodeType == ExpressionType.Convert)
-            {
-                mx = ((UnaryExpression)property.Body).Operand as MemberExpression;
-            }
-            else
-            {
-                mx= (property.Body as MemberExpression);
-            }
-            var propertyInfo = mx.Member as PropertyInfo;
-            if (propertyInfo == null)
-            {
-                throw new ArgumentException("The lambda expression 'property' should point to a valid Property");
-            }
+		/// <summary>
+		/// Creates an index for the specified object property.
+		/// e.g. CreateIndex<Client>(c => c.Name);
+		/// </summary>
+		/// <typeparam name="T">Type to reflect to a database table.</typeparam>
+		/// <param name="property">Property to index</param>
+		/// <param name="unique">Whether the index should be unique</param>
+		public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
+		{
+			MemberExpression mx;
+			if (property.Body.NodeType == ExpressionType.Convert)
+			{
+				mx = ((UnaryExpression)property.Body).Operand as MemberExpression;
+			}
+			else
+			{
+				mx= (property.Body as MemberExpression);
+			}
+			var propertyInfo = mx.Member as PropertyInfo;
+			if (propertyInfo == null)
+			{
+				throw new ArgumentException("The lambda expression 'property' should point to a valid Property");
+			}
 
-            var propName = propertyInfo.Name;
+			var propName = propertyInfo.Name;
 
-            var map = GetMapping<T>();
-            var colName = map.FindColumnWithPropertyName(propName).Name;
+			var map = GetMapping<T>();
+			var colName = map.FindColumnWithPropertyName(propName).Name;
 
-            CreateIndex(map.TableName, colName, unique);
-        }
+			CreateIndex(map.TableName, colName, unique);
+		}
 
 		public class ColumnInfo
 		{
@@ -611,8 +675,8 @@ namespace SQLite4Unity3d
 			
 			if (TimeExecution) {
 				_sw.Stop ();
-				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+				_elapsed += _sw.Elapsed;
+				this.InvokeTimeExecution (_sw.Elapsed, _elapsed);
 			}
 			
 			return r;
@@ -634,8 +698,8 @@ namespace SQLite4Unity3d
 			
 			if (TimeExecution) {
 				_sw.Stop ();
-				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+				_elapsed += _sw.Elapsed;
+				this.InvokeTimeExecution (_sw.Elapsed, _elapsed);
 			}
 			
 			return r;
@@ -769,21 +833,21 @@ namespace SQLite4Unity3d
 			return Query<T> (map.GetByPrimaryKeySql, pk).First ();
 		}
 
-        /// <summary>
-        /// Attempts to retrieve the first object that matches the predicate from the table
-        /// associated with the specified type. 
-        /// </summary>
-        /// <param name="predicate">
-        /// A predicate for which object to find.
-        /// </param>
-        /// <returns>
-        /// The object that matches the given predicate. Throws a not found exception
-        /// if the object is not found.
-        /// </returns>
-        public T Get<T> (Expression<Func<T, bool>> predicate) where T : new()
-        {
-            return Table<T> ().Where (predicate).First ();
-        }
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the predicate from the table
+		/// associated with the specified type. 
+		/// </summary>
+		/// <param name="predicate">
+		/// A predicate for which object to find.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate. Throws a not found exception
+		/// if the object is not found.
+		/// </returns>
+		public T Get<T> (Expression<Func<T, bool>> predicate) where T : new()
+		{
+			return Table<T> ().Where (predicate).First ();
+		}
 
 		/// <summary>
 		/// Attempts to retrieve an object with the given primary key from the table
@@ -824,20 +888,20 @@ namespace SQLite4Unity3d
 		}
 		
 		/// <summary>
-        /// Attempts to retrieve the first object that matches the predicate from the table
-        /// associated with the specified type. 
-        /// </summary>
-        /// <param name="predicate">
-        /// A predicate for which object to find.
-        /// </param>
-        /// <returns>
-        /// The object that matches the given predicate or null
-        /// if the object is not found.
-        /// </returns>
-        public T Find<T> (Expression<Func<T, bool>> predicate) where T : new()
-        {
-            return Table<T> ().Where (predicate).FirstOrDefault ();
-        }
+		/// Attempts to retrieve the first object that matches the predicate from the table
+		/// associated with the specified type. 
+		/// </summary>
+		/// <param name="predicate">
+		/// A predicate for which object to find.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public T Find<T> (Expression<Func<T, bool>> predicate) where T : new()
+		{
+			return Table<T> ().Where (predicate).FirstOrDefault ();
+		}
 
 		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
@@ -967,7 +1031,7 @@ namespace SQLite4Unity3d
 			} catch (SQLiteException) {
 				if (!noThrow)
 					throw;
-            
+			
 			}
 			// No need to rollback if there are no transactions open.
 		}
@@ -995,13 +1059,13 @@ namespace SQLite4Unity3d
 					// TODO: Mild race here, but inescapable without locking almost everywhere.
 					if (0 <= depth && depth < _transactionDepth) {
 #if NETFX_CORE
-                        Volatile.Write (ref _transactionDepth, depth);
+						Volatile.Write (ref _transactionDepth, depth);
 #elif SILVERLIGHT
 						_transactionDepth = depth;
 #else
-                        Thread.VolatileWrite (ref _transactionDepth, depth);
+						Thread.VolatileWrite (ref _transactionDepth, depth);
 #endif
-                        Execute (cmd + savepoint);
+						Execute (cmd + savepoint);
 						return;
 					}
 				}
@@ -1034,12 +1098,27 @@ namespace SQLite4Unity3d
 		public void RunInTransaction (Action action)
 		{
 			try {
-				var savePoint = SaveTransactionPoint ();
-				action ();
-				Release (savePoint);
+				lock (syncObjects[DatabasePath]) {
+					var savePoint = SaveTransactionPoint ();
+					action ();
+					Release (savePoint);
+				}
 			} catch (Exception) {
 				Rollback ();
 				throw;
+			}
+		}
+
+		/// <summary>
+		/// Executes <param name="action"> while blocking other threads to access the same database.
+		/// </summary>
+		/// <param name="action">
+		/// The <see cref="Action"/> to perform within a lock.
+		/// </param>
+		public void RunInDatabaseLock (Action action)
+		{
+			lock (syncObjects[DatabasePath]) {
+				action ();
 			}
 		}
 
@@ -1208,61 +1287,63 @@ namespace SQLite4Unity3d
 			return Insert (obj, extra, obj.GetType ());
 		}
 
-	    /// <summary>
-	    /// Inserts the given object and retrieves its
-	    /// auto incremented primary key if it has one.
-	    /// </summary>
-	    /// <param name="obj">
-	    /// The object to insert.
-	    /// </param>
-	    /// <param name="extra">
-	    /// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
-	    /// </param>
-	    /// <param name="objType">
-	    /// The type of object to insert.
-	    /// </param>
-	    /// <returns>
-	    /// The number of rows added to the table.
-	    /// </returns>
-	    public int Insert (object obj, string extra, Type objType)
+		/// <summary>
+		/// Inserts the given object and retrieves its
+		/// auto incremented primary key if it has one.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to insert.
+		/// </param>
+		/// <param name="extra">
+		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+		public int Insert (object obj, string extra, Type objType)
 		{
 			if (obj == null || objType == null) {
 				return 0;
 			}
 			
-            
+			
 			var map = GetMapping (objType);
 
 #if NETFX_CORE
-            if (map.PK != null && map.PK.IsAutoGuid)
-            {
-                // no GetProperty so search our way up the inheritance chain till we find it
-                PropertyInfo prop;
-                while (objType != null)
-                {
-                    var info = objType.GetTypeInfo();
-                    prop = info.GetDeclaredProperty(map.PK.PropertyName);
-                    if (prop != null) 
-                    {
-                        if (prop.GetValue(obj, null).Equals(Guid.Empty))
-                        {
-                            prop.SetValue(obj, Guid.NewGuid(), null);
-                        }
-                        break; 
-                    }
+			if (map.PK != null && map.PK.IsAutoGuid)
+			{
+				// no GetProperty so search our way up the inheritance chain till we find it
+				PropertyInfo prop;
+				while (objType != null)
+				{
+					var info = objType.GetTypeInfo();
+					prop = info.GetDeclaredProperty(map.PK.PropertyName);
+					if (prop != null) 
+					{
+						if (prop.GetValue(obj, null).Equals(Guid.Empty))
+						{
+							prop.SetValue(obj, Guid.NewGuid(), null);
+						}
+						break; 
+					}
 
-                    objType = info.BaseType;
-                }
-            }
+					objType = info.BaseType;
+				}
+			}
 #else
-            if (map.PK != null && map.PK.IsAutoGuid) {
-                var prop = objType.GetProperty(map.PK.PropertyName);
-                if (prop != null) {
-                    if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
-                        prop.SetValue(obj, Guid.NewGuid(), null);
-                    }
-                }
-            }
+			if (map.PK != null && map.PK.IsAutoGuid) {
+				var prop = objType.GetProperty(map.PK.PropertyName);
+				if (prop != null) {
+					//if (prop.GetValue(obj, null).Equals(Guid.Empty)) { 
+					if (prop.GetGetMethod().Invoke(obj, null).Equals(Guid.Empty))
+					{
+						prop.SetValue(obj, Guid.NewGuid(), null);
+					}
+				}
+			}
 #endif
 
 
@@ -1271,7 +1352,7 @@ namespace SQLite4Unity3d
 			var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
-				vals [i] = cols [i].GetValue (obj);
+				vals [i] = cols [i].GetValue(obj);
 			}
 			
 			var insertCmd = map.GetInsertCommand (this, extra);
@@ -1288,8 +1369,8 @@ namespace SQLite4Unity3d
 				throw;
 			}
 
-            if (map.HasAutoIncPK)
-            {
+			if (map.HasAutoIncPK)
+			{
 				var id = SQLite3.LastInsertRowid (Handle);
 				map.SetAutoIncPK (obj, id);
 			}
@@ -1516,7 +1597,7 @@ namespace SQLite4Unity3d
 		}
 	}
 
-    [AttributeUsage (AttributeTargets.Class)]
+	[AttributeUsage (AttributeTargets.Class)]
 	public class TableAttribute : Attribute
 	{
 		public string Name { get; set; }
@@ -1631,13 +1712,13 @@ namespace SQLite4Unity3d
 		Column[] _insertColumns;
 		Column[] _insertOrReplaceColumns;
 
-        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+		public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
 		{
 			MappedType = type;
 
 #if NETFX_CORE
 			var tableAttr = (TableAttribute)System.Reflection.CustomAttributeExtensions
-                .GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
+				.GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
 #else
 			var tableAttr = (TableAttribute)type.GetCustomAttributes (typeof (TableAttribute), true).FirstOrDefault ();
 #endif
@@ -1742,26 +1823,26 @@ namespace SQLite4Unity3d
 		PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
 		{
 			var cols = InsertColumns;
-		    string insertSql;
-            if (!cols.Any() && Columns.Count() == 1 && Columns[0].IsAutoInc)
-            {
-                insertSql = string.Format("insert {1} into \"{0}\" default values", TableName, extra);
-            }
-            else
-            {
+			string insertSql;
+			if (!cols.Any() && Columns.Count() == 1 && Columns[0].IsAutoInc)
+			{
+				insertSql = string.Format("insert {1} into \"{0}\" default values", TableName, extra);
+			}
+			else
+			{
 				var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 
 				if (replacing) {
 					cols = InsertOrReplaceColumns;
 				}
 
-                insertSql = string.Format("insert {3} into \"{0}\"({1}) values ({2})", TableName,
-                                   string.Join(",", (from c in cols
-                                                     select "\"" + c.Name + "\"").ToArray()),
-                                   string.Join(",", (from c in cols
-                                                     select "?").ToArray()), extra);
-                
-            }
+				insertSql = string.Format("insert {3} into \"{0}\"({1}) values ({2})", TableName,
+								   string.Join(",", (from c in cols
+													 select "\"" + c.Name + "\"").ToArray()),
+								   string.Join(",", (from c in cols
+													 select "?").ToArray()), extra);
+				
+			}
 			
 			var insertCommand = new PreparedSqlLiteInsertCommand(conn);
 			insertCommand.CommandText = insertSql;
@@ -1788,8 +1869,8 @@ namespace SQLite4Unity3d
 
 			public string Collation { get; private set; }
 
-            public bool IsAutoInc { get; private set; }
-            public bool IsAutoGuid { get; private set; }
+			public bool IsAutoInc { get; private set; }
+			public bool IsAutoGuid { get; private set; }
 
 			public bool IsPK { get; private set; }
 
@@ -1799,36 +1880,36 @@ namespace SQLite4Unity3d
 
 			public int? MaxStringLength { get; private set; }
 
-            public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
-            {
-                var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
+			public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
+			{
+				var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
-                _prop = prop;
-                Name = colAttr == null ? prop.Name : colAttr.Name;
-                //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
-                ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-                Collation = Orm.Collation(prop);
+				_prop = prop;
+				Name = colAttr == null ? prop.Name : colAttr.Name;
+				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
+				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+				Collation = Orm.Collation(prop);
 
-                IsPK = Orm.IsPK(prop) ||
+				IsPK = Orm.IsPK(prop) ||
 					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
-					 	string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
+						string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
 
-                var isAuto = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
-                IsAutoGuid = isAuto && ColumnType == typeof(Guid);
-                IsAutoInc = isAuto && !IsAutoGuid;
+				var isAuto = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+				IsAutoGuid = isAuto && ColumnType == typeof(Guid);
+				IsAutoInc = isAuto && !IsAutoGuid;
 
-                Indices = Orm.GetIndices(prop);
-                if (!Indices.Any()
-                    && !IsPK
-                    && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
-                    && Name.EndsWith (Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
-                    )
-                {
-                    Indices = new IndexedAttribute[] { new IndexedAttribute() };
-                }
-                IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
-                MaxStringLength = Orm.MaxStringLength(prop);
-            }
+				Indices = Orm.GetIndices(prop);
+				if (!Indices.Any()
+					&& !IsPK
+					&& ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
+					&& Name.EndsWith (Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
+					)
+				{
+					Indices = new IndexedAttribute[] { new IndexedAttribute() };
+				}
+				IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
+				MaxStringLength = Orm.MaxStringLength(prop);
+			}
 
 			public void SetValue (object obj, object val)
 			{
@@ -1837,16 +1918,16 @@ namespace SQLite4Unity3d
 
 			public object GetValue (object obj)
 			{
-				return _prop.GetValue (obj, null);
+				return _prop.GetGetMethod().Invoke(obj, null);
 			}
 		}
 	}
 
 	public static class Orm
 	{
-        public const int DefaultMaxStringLength = 140;
-        public const string ImplicitPkName = "Id";
-        public const string ImplicitIndexSuffix = "Id";
+		public const int DefaultMaxStringLength = 140;
+		public const string ImplicitPkName = "Id";
+		public const string ImplicitIndexSuffix = "Id";
 
 		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
@@ -1885,7 +1966,7 @@ namespace SQLite4Unity3d
 
 				return "varchar";
 			} else if (clrType == typeof(TimeSpan)) {
-                return "bigint";
+				return "bigint";
 			} else if (clrType == typeof(DateTime)) {
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
 			} else if (clrType == typeof(DateTimeOffset)) {
@@ -1898,9 +1979,9 @@ namespace SQLite4Unity3d
 				return "integer";
 			} else if (clrType == typeof(byte[])) {
 				return "blob";
-            } else if (clrType == typeof(Guid)) {
-                return "varchar(36)";
-            } else {
+			} else if (clrType == typeof(Guid)) {
+				return "varchar(36)";
+			} else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
 		}
@@ -1923,7 +2004,7 @@ namespace SQLite4Unity3d
 				return ((CollationAttribute)attrs [0]).Value;
 #else
 			if (attrs.Count() > 0) {
-                return ((CollationAttribute)attrs.First()).Value;
+				return ((CollationAttribute)attrs.First()).Value;
 #endif
 			} else {
 				return string.Empty;
@@ -1988,13 +2069,15 @@ namespace SQLite4Unity3d
 		public int ExecuteNonQuery ()
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing: " + this);
+				_conn.InvokeTrace ("Executing: " + this);
 			}
 			
 			var r = SQLite3.Result.OK;
-			var stmt = Prepare ();
-			r = SQLite3.Step (stmt);
-			Finalize (stmt);
+			lock (_conn.SyncObject) {
+				var stmt = Prepare ();
+				r = SQLite3.Step (stmt);
+				Finalize(stmt);
+			}
 			if (r == SQLite3.Result.Done) {
 				int rowsAffected = SQLite3.Changes (_conn.Handle);
 				return rowsAffected;
@@ -2046,66 +2129,64 @@ namespace SQLite4Unity3d
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing Query: " + this);
+				_conn.InvokeTrace ("Executing Query: " + this);
 			}
 
-			var stmt = Prepare ();
-			try
-			{
-				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+			lock (_conn.SyncObject) {
+				var stmt = Prepare ();
+				try {
+					var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
 
-				for (int i = 0; i < cols.Length; i++) {
-					var name = SQLite3.ColumnName16 (stmt, i);
-					cols [i] = map.FindColumn (name);
-				}
-			
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var obj = Activator.CreateInstance(map.MappedType);
 					for (int i = 0; i < cols.Length; i++) {
-						if (cols [i] == null)
-							continue;
-						var colType = SQLite3.ColumnType (stmt, i);
-						var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
-						cols [i].SetValue (obj, val);
- 					}
-					OnInstanceCreated (obj);
-					yield return (T)obj;
+						var name = SQLite3.ColumnName16 (stmt, i);
+						cols [i] = map.FindColumn (name);
+					}
+			
+					while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+						var obj = Activator.CreateInstance(map.MappedType);
+						for (int i = 0; i < cols.Length; i++) {
+							if (cols [i] == null)
+								continue;
+							var colType = SQLite3.ColumnType (stmt, i);
+							var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
+							cols [i].SetValue (obj, val);
+						}
+						OnInstanceCreated (obj);
+						yield return (T)obj;
+					}
+				} finally {
+					SQLite3.Finalize(stmt);
 				}
-			}
-			finally
-			{
-				SQLite3.Finalize(stmt);
 			}
 		}
 
 		public T ExecuteScalar<T> ()
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing Query: " + this);
+				_conn.InvokeTrace ("Executing Query: " + this);
 			}
 			
 			T val = default(T);
 			
-			var stmt = Prepare ();
+			lock (_conn.SyncObject) {
+				var stmt = Prepare();
 
-            try
-            {
-                var r = SQLite3.Step (stmt);
-                if (r == SQLite3.Result.Row) {
-                    var colType = SQLite3.ColumnType (stmt, 0);
-                    val = (T)ReadCol (stmt, 0, colType, typeof(T));
-                }
-                else if (r == SQLite3.Result.Done) {
-                }
-                else
-                {
-                    throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
-                }
-            }
-            finally
-            {
-                Finalize (stmt);
-            }
+				try {
+					var r = SQLite3.Step (stmt);
+					if (r == SQLite3.Result.Row) {
+						var colType = SQLite3.ColumnType (stmt, 0);
+						val = (T)ReadCol (stmt, 0, colType, typeof(T));
+					}
+					else if (r == SQLite3.Result.Done) {
+					}
+					else
+					{
+						throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+					}
+				} finally {
+					Finalize (stmt);
+				}
+			}
 			
 			return val;
 		}
@@ -2197,13 +2278,13 @@ namespace SQLite4Unity3d
 				} else if (value.GetType().GetTypeInfo().IsEnum) {
 #endif
 					SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
-                } else if (value is byte[]){
-                    SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
-                } else if (value is Guid) {
-                    SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
-                } else {
-                    throw new NotSupportedException("Cannot store type: " + value.GetType());
-                }
+				} else if (value is byte[]){
+					SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
+				} else if (value is Guid) {
+					SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
+				} else {
+					throw new NotSupportedException("Cannot store type: " + value.GetType());
+				}
 			}
 		}
 
@@ -2266,9 +2347,9 @@ namespace SQLite4Unity3d
 				} else if (clrType == typeof(byte[])) {
 					return SQLite3.ColumnByteArray (stmt, index);
 				} else if (clrType == typeof(Guid)) {
-                  var text = SQLite3.ColumnString(stmt, index);
-                  return new Guid(text);
-                } else{
+				  var text = SQLite3.ColumnString(stmt, index);
+				  return new Guid(text);
+				} else{
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
 			}
@@ -2297,7 +2378,7 @@ namespace SQLite4Unity3d
 		public int ExecuteNonQuery (object[] source)
 		{
 			if (Connection.Trace) {
-				Debug.WriteLine ("Executing: " + CommandText);
+				Connection.InvokeTrace ("Executing: " + CommandText);
 			}
 
 			var r = SQLite3.Result.OK;
@@ -2693,7 +2774,8 @@ namespace SQLite4Unity3d
 					if (mem.Member is PropertyInfo) {
 #endif
 						var m = (PropertyInfo)mem.Member;
-						val = m.GetValue (obj, null);
+						//val = m.GetValue (obj, null);
+						val = m.GetGetMethod().Invoke(obj, null);
 #if !NETFX_CORE
 					} else if (mem.Member.MemberType == MemberTypes.Field) {
 #else
@@ -2831,7 +2913,7 @@ namespace SQLite4Unity3d
 			var query = Take (1);
 			return query.ToList<T>().FirstOrDefault ();
 		}
-    }
+	}
 
 	public static class SQLite3
 	{
@@ -2918,7 +3000,7 @@ namespace SQLite4Unity3d
 			NoticeRecoverWAL = (Result.Notice | (1 << 8)),
 			NoticeRecoverRollback = (Result.Notice | (2 << 8))
 		}
-        
+		
 
 		public enum ConfigOption : int
 		{
@@ -2976,10 +3058,10 @@ namespace SQLite4Unity3d
 		{
 			IntPtr stmt;
 #if NETFX_CORE
-            byte[] queryBytes = System.Text.UTF8Encoding.UTF8.GetBytes (query);
-            var r = Prepare2 (db, queryBytes, queryBytes.Length, out stmt, IntPtr.Zero);
+			byte[] queryBytes = System.Text.UTF8Encoding.UTF8.GetBytes (query);
+			var r = Prepare2 (db, queryBytes, queryBytes.Length, out stmt, IntPtr.Zero);
 #else
-            var r = Prepare2 (db, query, System.Text.UTF8Encoding.UTF8.GetByteCount (query), out stmt, IntPtr.Zero);
+			var r = Prepare2 (db, query, System.Text.UTF8Encoding.UTF8.GetByteCount (query), out stmt, IntPtr.Zero);
 #endif
 			if (r != Result.OK) {
 				throw SQLiteException.New (r, GetErrmsg (db));
