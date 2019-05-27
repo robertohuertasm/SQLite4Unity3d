@@ -2175,7 +2175,10 @@ namespace SQLite4Unity3d
 					var r = SQLite3.Step (stmt);
 					if (r == SQLite3.Result.Row) {
 						var colType = SQLite3.ColumnType (stmt, 0);
-						val = (T)ReadCol (stmt, 0, colType, typeof(T));
+                        object colValue = ReadCol(stmt, 0, colType, typeof(T));
+                        if(colValue == null) { return default(T); }
+
+                        return (T)colValue;
 					}
 					else if (r == SQLite3.Result.Done) {
 					}
